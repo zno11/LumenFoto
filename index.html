@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="images/icons/logo/LumenFoto.png">
+    <title>Lumen Foto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: '#1d4ed8' } } }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+        .page-content { display: none; }
+        .page-content.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- MERGE THESE BACK INTO YOUR CSS IF THEY GOT ERASED --- */
+        .lightbox-swipe-left {
+            transform: translateX(-100px) scale(0.95) !important;
+            opacity: 0 !important;
+            transition: transform 0.2s ease-in, opacity 0.2s ease-in !important;
+        }
+        
+        .lightbox-swipe-right {
+            transform: translateX(100px) scale(0.95) !important;
+            opacity: 0 !important;
+            transition: transform 0.2s ease-in, opacity 0.2s ease-in !important;
+        }
+        
+        .lightbox-enter-left {
+            transform: translateX(-80px) scale(0.98) !important;
+            opacity: 0 !important;
+        }
+        
+        .lightbox-enter-right {
+            transform: translateX(80px) scale(0.98) !important;
+            opacity: 0 !important;
+        }
+        
+        .lightbox-animate-reset {
+            transform: translateX(0) scale(1) !important;
+            opacity: 1 !important;
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease-out !important;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-black tracking-tighter cursor-pointer" onclick="navigate('home')">LUMEN <span class="text-blue-600 dark:text-blue-500">FOTO</span></h1>
+            
+            <nav class="hidden md:flex gap-8 items-center font-medium">
+                <button onclick="navigate('home')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="nav_home">Home</button>
+                <button onclick="navigate('portfolio')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="nav_portfolio">Portfolio</button>
+                <button onclick="navigate('about')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="nav_about">About</button>
+                <button onclick="navigate('tos')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="nav_tos">Terms</button>
+            </nav>
+
+            <div class="flex items-center gap-4">
+                <!-- Modern Styled Language Pill -->
+                <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-1 border border-gray-200 dark:border-gray-700">
+                    <button id="btn-en" onclick="setLang('en')" class="px-3 py-1 rounded-full text-xs font-bold transition-colors">EN</button>
+                    <button id="btn-nl" onclick="setLang('nl')" class="px-3 py-1 rounded-full text-xs font-bold transition-colors">NL</button>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button id="themeToggle" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-moon dark:hidden text-gray-700"></i>
+                    <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-6xl mx-auto px-6 py-12 w-full">
+        
+        <!-- Home Page -->
+        <div id="home" class="page-content active space-y-20">
+            <!-- Hero Section -->
+            <div class="relative rounded-2xl overflow-hidden shadow-2xl h-[450px] md:h-[550px]">
+                <img src="images/albums/Zandvoort Summer Throphy 2024/MP-ZandvoortSummerThrophy-84.jpg" alt="Hero Photography" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/50"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                <div class="absolute inset-0 flex flex-col justify-end p-8 md:p-12 z-10">
+                    <h2 class="text-4xl md:text-6xl font-extrabold text-white mb-4 drop-shadow-lg" data-i18n="hero_title">Capturing the World</h2>
+                    <p class="text-lg text-gray-200 max-w-2xl mb-8 drop-shadow-md font-medium" data-i18n="hero_desc">I shoot photos, vehicles, and everything in between. Welcome to my personal portfolio.</p>
+                    <div>
+                        <button onclick="navigate('portfolio')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition shadow-lg" data-i18n="hero_btn">View My Work</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Featured Album Showcase Section with clean padding -->
+            <div class="pt-4 space-y-16">
+                
+                <div>
+                    <h3 class="text-2xl font-bold mb-8 border-b border-gray-200 dark:border-gray-800 pb-3 flex items-center gap-2">
+                        <i class="fas fa-images text-blue-500"></i> 
+                        <span data-i18n="featured_photos_title">Featured Photos</span>
+                    </h3>
+                    
+                    <div id="featured-photos-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        </div>
+                </div>
+              
+                <div>
+                    <h3 class="text-2xl font-bold mb-8 border-b border-gray-200 dark:border-gray-800 pb-3 flex items-center gap-2">
+                        <i class="fas fa-star text-yellow-500"></i> 
+                        <span data-i18n="featured_albums_title">Featured Albums</span>
+                    </h3>
+                  
+                    <div id="featured-album-container">
+                        </div>
+                </div>
+              
+            </div>
+
+            <!-- <div class="pt-4">
+                <h3 class="text-2xl font-bold mb-8 border-b border-gray-200 dark:border-gray-800 pb-3 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-500"></i> <span data-i18n="featured_title">Featured Showcase</span>
+                </h3>
+                <div id="featured-album-container">
+                </div>
+            </div> -->
+        </div>
+
+        <!-- Portfolio Page -->
+        <div id="portfolio" class="page-content">
+            <h2 class="text-3xl font-bold mb-8 border-b border-gray-200 dark:border-gray-800 pb-4" data-i18n="nav_portfolio">Portfolio</h2>
+            <div id="album-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Albums injected via JS -->
+            </div>
+        </div>
+
+        <!-- Dynamic Gallery Viewer Page -->
+        <div id="gallery" class="page-content">
+            <button onclick="navigate('portfolio')" class="mb-6 flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
+                <i class="fas fa-arrow-left"></i> <span data-i18n="back_to_portfolio">Back to Portfolio</span>
+            </button>
+            <div class="mb-8">
+                <h2 id="gallery-title" class="text-4xl font-black mb-2"></h2>
+                <p id="gallery-description" class="text-gray-600 dark:text-gray-400 max-w-2xl"></p>
+            </div>
+            <!-- The photo grid layout -->
+            <div id="gallery-images-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <!-- Album photos injected here via JS -->
+            </div>
+        </div>
+
+        <!-- Terms of Service Page -->
+        <div id="tos" class="page-content max-w-3xl mx-auto py-6">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-200 dark:border-gray-800 pb-4" data-i18n="nav_tos">Terms of Service</h2>
+            <div class="prose dark:prose-invert text-gray-700 dark:text-gray-300 space-y-4">
+                <p data-i18n="tos_p1">Welcome to my personal photography portfolio.</p>
+                <p class="font-semibold text-red-600 dark:text-red-400" data-i18n="tos_p2">All images, photographs, and content on this website are my exclusive personal property and are protected by copyright laws.</p>
+                <p data-i18n="tos_p3">You may not download, reproduce, distribute, or use these images for personal, commercial, or AI-training purposes without my explicit written permission. By browsing this site, you agree to respect these terms. Enjoy the view, but please do not take the photos.</p>
+            </div>
+        </div>
+
+        <div id="about" class="page-content">
+            <div class="flex flex-col md:flex-row gap-12 items-center py-6">
+                
+                <div class="w-full md:w-1/3 max-w-sm">
+                    <div class="aspect-square rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-100 dark:border-gray-800 rotate-1 hover:rotate-0 transition duration-300">
+                        <img src="images/icons/about me/Avatar.JPG" alt="Profile Shot" class="w-full h-full object-cover">
+                    </div>
+                </div>
+              
+                <div class="w-full md:w-2/3 space-y-6">
+                    <div class="space-y-2">
+                        <span class="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400" data-i18n="about_subtitle">The Photographer</span>
+                        <h2 class="text-4xl font-black tracking-tight" data-i18n="about_title">Hi, I'm a Visual Storyteller</h2>
+                    </div>
+                    
+                    <div class="prose dark:prose-invert text-gray-600 dark:text-gray-400 space-y-4 leading-relaxed font-medium">
+                        <p data-i18n="about_p1">I am a passionate photographer specializing in capturing high-speed action, machinery, and urban landscapes. My journey started behind the lens looking for unique angles that tell a story beyond what the naked eye catches on a daily basis.</p>
+                        <p data-i18n="about_p2">Whether it's the roar of engines echoing through the sand dunes at the Zandvoort race circuit or the quiet stillness of geometric city architectures, I strive to preserve those fleeting moments with dramatic lighting and razor-sharp clarity.</p>
+                        <p data-i18n="about_p3">When I'm not tracking down machinery tracks or carrying gear into city streets, I spend my time exploring backend tech, setting up portfolio architectures, and building digital spaces to host my curation.</p>
+                    </div>
+                  
+                    <div class="pt-4">
+                        <a onclick="navigate('home')" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition shadow-lg text-sm select-none" data-i18n="about_contact">
+                            <i class="fas fa-paper-plane"></i> Get in Touch
+                        </a>
+                    </div>
+                </div>
+              
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Sleek, Redesigned Multi-Column Footer -->
+    <footer class="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-auto pt-12 pb-8">
+        <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div class="space-y-3">
+                <h4 class="text-lg font-black tracking-tighter">PHOTO<span class="text-blue-600 dark:text-blue-500">FOLIO</span></h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs" data-i18n="footer_bio">A curated archive of personal photography capturing landscapes, architecture, and automotive machinery.</p>
+            </div>
+            <div>
+                <h5 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3" data-i18n="footer_explore">Explore</h5>
+                <ul class="space-y-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                    <li><button onclick="navigate('home')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="nav_home">Home</button></li>
+                    <li><button onclick="navigate('portfolio')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="nav_portfolio">Portfolio</button></li>
+                    <li><a onclick="navigate('home')" class="hover:text-blue-600 dark:hover:text-blue-400 transition" data-i18n="footer_roadmap">Roadmap</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3" data-i18n="footer_connect">Connect With Me</h5>
+                <div class="flex gap-4 text-xl text-gray-600 dark:text-gray-400">
+                    <a href="https://www.instagram.com/motolumen" target="_blank" class="hover:text-blue-600 transition"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="hover:text-blue-400 transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-blue-800 transition"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-6 pt-6 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+            <div>&copy; 2026 PhotoFolio. <span data-i18n="footer_rights">All rights reserved.</span></div>
+            <div class="flex gap-4">
+                <button onclick="navigate('tos')" class="hover:underline" data-i18n="nav_tos">Terms of Service</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Lightbox Pop-up Preview Container -->
+    <div id="lightbox" class="fixed inset-0 bg-black/95 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm select-none">
+
+        <!-- Close Button (Top Right) -->
+        <button id="lightbox-close" class="absolute top-6 right-6 text-white text-3xl opacity-60 hover:opacity-100 transition z-50">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- Left Navigation Button -->
+        <button id="lightbox-prev" class="absolute left-4 md:left-8 text-white text-4xl opacity-50 hover:opacity-100 transition p-4 z-50 hidden">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <!-- Large Image Interactive Frame (Now handles boundary locking) -->
+        <div id="lightbox-frame" class="w-[85vw] h-[80vh] flex items-center justify-center overflow-hidden relative">
+            <img id="lightbox-img" src="" alt="Large Preview" class="max-w-full max-h-full object-contain rounded shadow-2xl border border-white/10 transition-transform duration-200 cursor-zoom-in ease-out will-change-transform">
+        </div>
+
+        <!-- Right Navigation Button -->
+        <button id="lightbox-next" class="absolute right-4 md:right-8 text-white text-4xl opacity-50 hover:opacity-100 transition p-4 z-50 hidden">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <!-- Filename/Caption Tracking Text -->
+        <p id="lightbox-caption" class="text-gray-400 mt-6 text-sm font-mono tracking-wide z-50"></p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
