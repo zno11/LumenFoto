@@ -28,7 +28,6 @@ const translations = {
         photos_label: "photos",
         featured_photos_title: "Featured Photos",
         featured_albums_title: "Featured Albums",
-        view_album: "View Gallery",
         nav_about: "About",
         about_subtitle: "The Photographer",
         about_title: "Hi, I'm a Visual Storyteller",
@@ -58,7 +57,6 @@ const translations = {
         photos_label: "foto's",
         featured_photos_title: "Uitgelichte Foto's",
         featured_albums_title: "Uitgelichte Albums",
-        view_album: "Bekijk Galerij",
         nav_about: "Over Mij",
         about_subtitle: "De Fotograaf",
         about_title: "Hoi, Ik ben een Visuele Verhalenverteller",
@@ -77,50 +75,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Fetch JSON config, 2. Scan folders on the fly, 3. Build UI elements
     await loadAndScanAlbums();
     
+    // Read the current hash token on load or hard refresh
     const initialPage = window.location.hash.replace('#', '') || 'home';
-    if(initialPage.startsWith('gallery-')) {
-        navigate('portfolio');
-    } else {
-        navigate(initialPage);
-    }
+    
+    // Execute visual route selection
+    handleRouting(initialPage);
 });
 
-// --- NAVIGATION ROUTER ---
-// function navigate(pageId) {
-//     document.querySelectorAll('.page-content').forEach(el => el.classList.remove('active'));
-//     const basePage = pageId.split('-')[0]; 
-//     const targetPage = document.getElementById(basePage);
-//     if(targetPage) {
-//         targetPage.classList.add('active');
-//         window.location.hash = pageId;
-//         window.scrollTo({ top: 0, behavior: 'smooth' });
-//     }
-//     const cleanPath = pageId === 'home' ? '/' : `/${pageId}`;
-//     history.replaceState(null, '', cleanPath);
-// }
-
-// --- NAVIGATION ROUTER ---
+// --- CENTRAL ROUTING LOGIC ---
 function navigate(pageId) {
-    // 1. Handle active states exactly how your layout expects it
+    // Simply setting the hash changes the URL bar safely and fires 'hashchange'
+    window.location.hash = pageId;
+}
+
+function handleRouting(pageId) {
+    // 1. Clear out active styling across page panels
     document.querySelectorAll('.page-content').forEach(el => el.classList.remove('active'));
     
+    // 2. Compute true target element (e.g., "gallery-0" points to "portfolio" wrapper layout)
     const basePage = pageId.split('-')[0]; 
     const targetPage = document.getElementById(basePage);
     
-    if(targetPage) {
+    if (targetPage) {
         targetPage.classList.add('active');
-        
-        // 2. Clean modern URL handling without hashes
-        const cleanPath = pageId === 'home' ? '/' : `/${pageId}`;
-        
-        // Only push a new step into history if the user is visiting a new page
-        if (window.location.pathname !== cleanPath) {
-            history.pushState({ pageId: pageId }, '', cleanPath);
-        }
-        
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        // Safe layout fallback if user inputs gibberish route string
+        const homePage = document.getElementById('home');
+        if (homePage) homePage.classList.add('active');
+    }
+
+    // 3. Close open lightbox overlay if routing to a separate view section entirely
+    if (!pageId.startsWith('gallery-')) {
+        const lightbox = document.getElementById('lightbox');
+        if (lightbox) {
+            lightbox.classList.add('hidden');
+            document.body.style.overflow = '';
+            resetZoom();
+        }
+    } else {
+        // Directly route deep links directly into open lightboxes
+        const albumIndex = parseInt(pageId.split('-')[1], 10);
+        if (!isNaN(albumIndex)) {
+            openGallery(albumIndex);
+        }
     }
 }
+
+// Watch window mutations dynamically for manual input, link clicks, or historical navigation presses
+window.addEventListener('hashchange', () => {
+    const page = window.location.hash.replace('#', '') || 'home';
+    handleRouting(page);
+});
 
 // --- THEME ENGINE ---
 const themeBtn = document.getElementById('themeToggle');
@@ -164,19 +170,20 @@ function updateLangUI(activeLang) {
         btn.className = "px-3 py-1 rounded-full text-xs font-bold transition-colors text-gray-500 hover:text-gray-800 dark:hover:text-gray-200";
     });
     const activeBtn = document.getElementById(`btn-${activeLang}`);
-    activeBtn.className = "px-3 py-1 rounded-full text-xs font-bold transition-colors bg-white shadow-sm text-blue-600 dark:bg-gray-700 dark:text-blue-400";
+    if (activeBtn) {
+        activeBtn.className = "px-3 py-1 rounded-full text-xs font-bold transition-colors bg-white shadow-sm text-blue-600 dark:bg-gray-700 dark:text-blue-400";
+    }
 }
 
 function applyTranslations(lang) {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (translations[lang][key]) {
+        if (translations[lang] && translations[lang][key]) {
             el.textContent = translations[lang][key];
         }
     });
 }
 
-// Check if the link contains an image extension ANYWHERE in the string (even before .preview)
 const isImageFile = (pathOrFilename) => /\.(jpe?g|png|webp|gif)/i.test(pathOrFilename);
 
 async function loadAndScanAlbums() {
@@ -205,21 +212,15 @@ async function loadAndScanAlbums() {
                     let href = anchor.getAttribute('href');
                     if (!href) return;
 
-                    // If it contains an image extension anywhere in the text
                     if (isImageFile(href)) {
-                        // 1. Clean up Five Server's ".preview" trick if it's there
                         if (href.endsWith('.preview')) {
                             href = href.replace('.preview', '');
                         }
 
-                        // 2. Strip off any browser query strings (?v=123 etc)
                         let cleanUrl = href.split('?')[0];
-                        
-                        // 3. Extract just the clean filename at the end of the path
                         let filename = cleanUrl.split('/').pop();
                         filename = decodeURIComponent(filename);
 
-                        // Safety check to exclude directory links or credits
                         if (filename && filename !== '..' && filename !== '.') {
                             trackedNames.add(filename);
                         }
@@ -250,30 +251,21 @@ async function loadAndScanAlbums() {
 function renderInterface() {
     const grid = document.getElementById('album-grid');
     const featuredContainer = document.getElementById('featured-album-container');
-    
-    // 🚨 YOU ARE MISSING THIS EXACT LINE RIGHT HERE:
     const featuredPhotosContainer = document.getElementById('featured-photos-container'); 
     
-    // Make sure all three variables are added to this safety check:
     if(!grid || !featuredContainer || !featuredPhotosContainer) return;
     
-    // Clear them all out on reload
     grid.innerHTML = ''; 
     featuredContainer.innerHTML = ''; 
-    featuredPhotosContainer.innerHTML = ''; // 👈 This is line 220ish where it is crashing!
+    featuredPhotosContainer.innerHTML = ''; 
     
     const photoLabel = translations[currentLang].photos_label;
 
     activeAlbumsData.forEach((album, idx) => {
         const imageCount = album.images.length;
-
-        // ON-THE-FLY LANGUAGE CHECK (Falls back to English if something is missing)
         const displayTitle = album.title[currentLang] || album.title['en'];
         const displayDesc = album.description[currentLang] || album.description['en'];
 
-        // =========================================================
-        // 👇 NEW: FEATURED PHOTOS GENERATION LOGIC
-        // =========================================================
         if (album.featured_images && album.featured_images.length > 0) {
             album.featured_images.forEach(imgName => {
                 const photoCard = document.createElement('div');
@@ -292,17 +284,14 @@ function renderInterface() {
                     </div>
                 `;
                 
-                // Clicking the individual photo takes them straight to that photo's album gallery!
-                photoCard.onclick = () => openGallery(idx);
+                photoCard.onclick = () => navigate(`gallery-${idx}`);
                 featuredPhotosContainer.appendChild(photoCard);
             });
         }
-        // =========================================================
 
-        // Portfolio View Card Component Construction
         const card = document.createElement('div');
         card.className = "bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer border border-gray-100 dark:border-gray-800";
-        card.onclick = () => openGallery(idx);
+        card.onclick = () => navigate(`gallery-${idx}`);
         card.innerHTML = `
             <div class="h-52 overflow-hidden relative">
                 <img src="${album.cover}" alt="Cover" class="w-full h-full object-cover">
@@ -318,11 +307,8 @@ function renderInterface() {
         `;
         grid.appendChild(card);
 
-        // Featured Item Element Generation Logic
         if (album.featured) {
             const featuredCard = document.createElement('div');
-
-            // 👇 ADDED 'mb-8' TO THE CLASS LIST HERE TO ENFORCE GAPS WHEN STACKED
             featuredCard.className = "flex flex-col md:flex-row bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-800 mb-8";
 
             featuredCard.innerHTML = `
@@ -337,7 +323,7 @@ function renderInterface() {
                     <h4 class="text-3xl md:text-4xl font-black mb-4">${displayTitle}</h4>
                     <p class="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed text-base md:text-lg">${displayDesc}</p>
                     <div>
-                        <button onclick="openGallery(${idx})" class="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-white transition flex items-center gap-2">
+                        <button onclick="navigate('gallery-${idx}')" class="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-white transition flex items-center gap-2">
                             <i class="fas fa-images"></i> <span>${translations[currentLang].view_album}</span>
                         </button>
                     </div>
@@ -347,7 +333,6 @@ function renderInterface() {
         }
     });
 
-    // Run your standard translator for static text elements (nav, hero, footer)
     applyTranslations(currentLang);
 }
 
@@ -364,7 +349,6 @@ let startX = 0, startY = 0;
 let translateX = 0, translateY = 0;
 let currentScale = 1;
 
-// CONSTANTS FOR SCROLL TUNING
 const MIN_SCALE = 1.0;
 const MAX_SCALE = 4.0;
 const SCALE_STEP = 0.5;
@@ -372,8 +356,6 @@ const SCALE_STEP = 0.5;
 // --- MOBILE & TRACKPAD SWIPE NAVIGATION ---
 let touchStartX = 0;
 let touchEndX = 0;
-
-// The minimum distance (in pixels) a finger must slide to count as an intentional swipe
 const SWIPE_THRESHOLD = 60; 
 
 window.addEventListener('touchstart', (e) => {
@@ -389,44 +371,37 @@ window.addEventListener('touchend', (e) => {
     handleSwipeGesture();
 }, { passive: true });
 
-// 1. SWIPE ROUTER: Hands off to central animation engine
 function handleSwipeGesture() {
     if (isZoomed) return; 
     const swipeDistance = touchEndX - touchStartX;
 
     if (swipeDistance < -SWIPE_THRESHOLD) {
-        animateImageSwitch('next'); // 👈 Left swipe means NEXT
+        animateImageSwitch('next');
     } else if (swipeDistance > SWIPE_THRESHOLD) {
-        animateImageSwitch('prev'); // 👈 Right swipe means PREV
+        animateImageSwitch('prev');
     }
 }
 
-// 2. CENTRAL ANIMATION ENGINE: Now services swipes, clicks, AND keys!
 function animateImageSwitch(direction) {
     if (isZoomed) return;
     const img = document.getElementById('lightbox-img');
     if (!img || currentAlbumImages.length <= 1) return;
 
-    // Pick target classes based on movement vector
     const exitClass = direction === 'next' ? 'lightbox-swipe-left' : 'lightbox-swipe-right';
     const enterClass = direction === 'next' ? 'lightbox-enter-right' : 'lightbox-enter-left';
 
-    // Slide current image out
     img.className = `max-w-full max-h-full object-contain rounded shadow-2xl ${exitClass}`;
     
     setTimeout(() => {
-        // Swap core data index paths halfway through transit
         if (direction === 'next') {
             currentImageIndex = (currentImageIndex + 1) % currentAlbumImages.length;
         } else {
             currentImageIndex = (currentImageIndex - 1 + currentAlbumImages.length) % currentAlbumImages.length;
         }
-        updateLightboxImage(); // Changes .src & text layout
+        updateLightboxImage();
         
-        // Snap new image quietly outside opposite screen border 
         img.className = `max-w-full max-h-full object-contain rounded shadow-2xl ${enterClass}`;
         
-        // Glide it beautifully into center screen view
         requestAnimationFrame(() => {
             setTimeout(() => {
                 img.className = "max-w-full max-h-full object-contain rounded shadow-2xl lightbox-animate-reset";
@@ -439,8 +414,10 @@ function openGallery(albumIndex) {
     const album = activeAlbumsData[albumIndex];
     if(!album) return;
 
-    document.getElementById('gallery-title').textContent = album.title[currentLang] || album.title['en'];
-    document.getElementById('gallery-description').textContent = album.description[currentLang] || album.description['en'];
+    const gTitle = document.getElementById('gallery-title');
+    const gDesc = document.getElementById('gallery-description');
+    if (gTitle) gTitle.textContent = album.title[currentLang] || album.title['en'];
+    if (gDesc) gDesc.textContent = album.description[currentLang] || album.description['en'];
     
     const imagesGrid = document.getElementById('gallery-images-grid');
     if(!imagesGrid) return;
@@ -467,8 +444,6 @@ function openGallery(albumIndex) {
             imagesGrid.appendChild(wrapper);
         });
     }
-
-    navigate(`gallery-${albumIndex}`);
 }
 
 // --- LIGHTBOX INTERACTION CONTROLLER ---
@@ -502,8 +477,6 @@ function updateLightboxImage() {
     
     if (!lightboxImg || currentAlbumImages.length === 0) return;
     
-    // Note: We don't want resetZoom wiping out our anim classes during mid-slide transitions,
-    // so we manually clear transforms and scale instead of hard-resetting className!
     currentScale = 1.0;
     translateX = 0;
     translateY = 0;
@@ -597,7 +570,7 @@ function resetZoom() {
     didDrag = false;
 }
 
-// --- DRAGGING ENGINE (HOLD MOUSE & MOVE) ---
+// --- DRAGGING ENGINE ---
 function startDrag(e) {
     if (!isZoomed) return;
     e.preventDefault();
@@ -632,7 +605,6 @@ function endDrag() {
     isDragging = false; 
 }
 
-// --- BACKWARD COMPATIBLE CORE TOGGLES ---
 function nextImage(e) { if (e && e.stopPropagation) e.stopPropagation(); animateImageSwitch('next'); }
 function prevImage(e) { if (e && e.stopPropagation) e.stopPropagation(); animateImageSwitch('prev'); }
 
@@ -644,49 +616,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevBtn = document.getElementById('lightbox-prev');
     const nextBtn = document.getElementById('lightbox-next');
 
-    // Read the current path from the URL bar on load/refresh
-    const currentPath = window.location.pathname; // e.g., "/gallery-0" or "/about"
-    
-    // Clean up the string to find your router ID
-    const targetPage = currentPath.replace('/', '') || 'home';
-    
-    // If it's a gallery path, parse out the index and open it up!
-    if (targetPage.startsWith('gallery-')) {
-        const albumIndex = parseInt(targetPage.split('-')[1], 10);
-        openGallery(albumIndex);
-    } else {
-        // Otherwise, navigate to the standard text page view
-        navigate(targetPage); 
-    }
-    
     if (!lightbox || !img) return;
 
     const closeAction = () => {
-        lightbox.classList.add('hidden');
-        document.body.style.overflow = ''; 
-        resetZoom();
+        // Return browser history contextually backward out of deep lightbox hash states safely
+        if (window.location.hash.startsWith('#gallery-')) {
+            window.location.hash = 'portfolio';
+        } else {
+            lightbox.classList.add('hidden');
+            document.body.style.overflow = ''; 
+            resetZoom();
+        }
     };
 
-    // Global Click Wireups
     if (closeBtn) closeBtn.onclick = closeAction;
     if (prevBtn) prevBtn.onclick = prevImage;
     if (nextBtn) nextBtn.onclick = nextImage;
     
-    // Precision Mouse Mechanics
     img.onclick = handleImageClick;
     img.onwheel = handleImageScroll;
     img.onmousedown = startDrag;
-    window.onmousemove = processDrag; // Window bound guarantees smooth edge tracks
+    window.onmousemove = processDrag; 
     window.onmouseup = endDrag;
 
-    // Click backdrop to close
     lightbox.onclick = (e) => {
         if (e.target === lightbox || e.target.id === 'lightbox-frame') {
             closeAction();
         }
     };
 
-    // Keyboard Hotkeys
     document.addEventListener('keydown', (e) => {
         if (lightbox.classList.contains('hidden')) return;
 
@@ -698,33 +656,4 @@ document.addEventListener('DOMContentLoaded', () => {
             prevImage();
         }
     });
-});
-
-// Force the UI to update whenever the user moves back or forward in history
-window.addEventListener('popstate', () => {
-    // 1. Read the clean path name from the address bar, strip symbols, default to home
-    let currentPath = window.location.pathname.replace('/', '') || 'home';
-    
-    // 2. Handle gallery view paths (e.g., "gallery-0" needs to map back to the portfolio layout)
-    if (currentPath.startsWith('gallery-')) {
-        currentPath = 'portfolio';
-    }
-
-    // 3. Strip the 'active' class from all pages to hide them
-    document.querySelectorAll('.page-content').forEach(el => {
-        el.classList.remove('active');
-    });
-    
-    // 4. Find the matching page panel and make it visible
-    const targetPage = document.getElementById(currentPath);
-    if (targetPage) {
-        targetPage.classList.add('active');
-    } else {
-        // Fallback: If a path is unrecognized, safely show the home panel
-        const homePage = document.getElementById('home');
-        if (homePage) homePage.classList.add('active');
-    }
-    
-    // 5. Keep the smooth scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 });
