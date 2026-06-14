@@ -151,6 +151,10 @@ themeBtn.addEventListener('click', () => {
 
 // --- TRANSLATION SWITCHER ---
 function initLang() {
+    if (!translations[currentLang]) {
+        currentLang = 'en';
+        localStorage.setItem('lang', 'en');
+    }
     applyTranslations(currentLang);
     updateLangUI(currentLang);
 }
@@ -160,7 +164,22 @@ window.setLang = function(lang) {
     localStorage.setItem('lang', currentLang);
     applyTranslations(currentLang);
     updateLangUI(currentLang);
-    renderInterface(); 
+    renderInterface();
+
+    // If a gallery is currently open, refresh its title/description in the new language
+    const hash = window.location.hash.replace('#', '');
+    if (hash.startsWith('gallery-')) {
+        const albumIndex = parseInt(hash.split('-')[1], 10);
+        if (!isNaN(albumIndex)) {
+            const album = activeAlbumsData[albumIndex];
+            if (album) {
+                const gTitle = document.getElementById('gallery-title');
+                const gDesc = document.getElementById('gallery-description');
+                if (gTitle) gTitle.textContent = album.title[currentLang] || album.title['en'];
+                if (gDesc) gDesc.textContent = album.description[currentLang] || album.description['en'];
+            }
+        }
+    }
 }
 
 function updateLangUI(activeLang) {
@@ -234,6 +253,14 @@ async function loadAndScanAlbums() {
             }
 
             console.log(`[Success] Automatically detected ${filesDetected.length} images inside: ${config.folder}`, filesDetected);
+
+            // Fallback: if live directory scanning isn't supported by the host
+            // (e.g. static hosting with no directory listing), use featured_images
+            // so the gallery and photo count aren't left empty.
+            if (filesDetected.length === 0 && config.featured_images && config.featured_images.length > 0) {
+                console.warn(`[Fallback] Using featured_images list for ${config.folder} since folder scan returned nothing.`);
+                filesDetected = [...config.featured_images];
+            }
 
             activeAlbumsData.push({
                 ...config,
