@@ -1,7 +1,7 @@
 [
   {
     "folder": "images/albums/Zandvoort Summer Throphy 2024/",
-    "cover": "images/albums/Zandvoort Summer Throphy 2024/MP-ZandvoortSummerThrophy-63.jpg",
+    "cover": "images/albums/Zandvoort Summer Throphy 2024/MP-ZandvoortSummerThrophy-63.webp",
     "date": "2024-04-25",
     "featured": true,
     "title": {
@@ -12,11 +12,11 @@
       "en": "A thrilling day at the Zandvoort circuit with intense racing and passionate fans.",
       "nl": "Een spannende dag op het circuit van Zandvoort met intense races en gepassioneerde fans."
     },
-    "featured_images": ["MP-ZandvoortSummerThrophy-73.jpg", "MP-ZandvoortSummerThrophy-63.jpg", "MP-ZandvoortSummerThrophy-74.jpg", "MP-ZandvoortSummerThrophy-10.jpg"]
+    "featured_images": ["MP-ZandvoortSummerThrophy-73.webp", "MP-ZandvoortSummerThrophy-63.webp", "MP-ZandvoortSummerThrophy-74.webp", "MP-ZandvoortSummerThrophy-10.webp"]
   },
   {
     "folder": "images/albums/amsterdam-night/",
-    "cover": "images/albums/amsterdam-night/cover.jpg",
+    "cover": "images/albums/amsterdam-night/cover.webp",
     "date": "2026-04-12",
     "featured": true,
     "title": {
